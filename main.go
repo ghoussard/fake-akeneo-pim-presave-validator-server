@@ -14,12 +14,8 @@ type logEntry struct {
 	Type      string `json:"type"`
 }
 
-type productErrors struct {
-	Errors []any `json:"errors"`
-}
-
 type response struct {
-	Products []productErrors `json:"products"`
+	Errors []any `json:"errors"`
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
@@ -34,20 +30,11 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var productCount int
 	requestType := "unitary"
 
-	if raw, ok := body["products"]; ok {
+	if _, ok := body["products"]; ok {
 		requestType = "batch"
-		var products []json.RawMessage
-		if err := json.Unmarshal(raw, &products); err != nil {
-			http.Error(w, "Bad Request", http.StatusBadRequest)
-			return
-		}
-		productCount = len(products)
-	} else if _, ok := body["product"]; ok {
-		productCount = 1
-	} else {
+	} else if _, ok := body["product"]; !ok {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
@@ -60,13 +47,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	time.Sleep(250 * time.Millisecond)
 
-	products := make([]productErrors, productCount)
-	for i := range products {
-		products[i] = productErrors{Errors: []any{}}
-	}
-
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response{Products: products})
+	json.NewEncoder(w).Encode(response{Errors: []any{}})
 }
 
 func main() {
